@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Migration guide</title>
+    <title>Contributing</title>
     
       <meta name="author" content="Fabio Labella"/>
     
@@ -82,9 +82,9 @@
         <li class="level1"><a href="index.html">Cats MTL</a></li>
         <li class="level1"><a href="getting-started.html">What is MTL?</a></li>
         <li class="level1"><a href="mtl-classes.html">MTL classes summary</a></li>
-        <li class="level1 active"><a href="#">Migration guide</a></li>
+        <li class="level1"><a href="migration.html">Migration guide</a></li>
         <li class="level1"><a href="design.html">cats-mtl Design</a></li>
-        <li class="level1"><a href="contributing.html">Contributing</a></li>
+        <li class="level1 active"><a href="#">Contributing</a></li>
         <li class="level1 nav-header">mtl-classes</li>
         <li class="level2"><a href="mtl-classes/raise.html">Raise</a></li>
         <li class="level2"><a href="mtl-classes/tell.html">Tell</a></li>
@@ -108,11 +108,12 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Migration guide</a></p>
+        <p class="header"><a href="#">Contributing</a></p>
 
         <ul class="nav-list">
-          <li class="level1"><a href="#ask-local">Ask / Local</a></li>
-          <li class="level1"><a href="#tell-listen">Tell / Listen</a></li>
+          <li class="level1"><a href="#adding-a-new-transformer-typeclass">Adding a new transformer typeclass</a></li>
+          <li class="level1"><a href="#adding-a-new-transformer-typeclass-instance">Adding a new transformer typeclass instance</a></li>
+          <li class="level1"><a href="#running-documentation-site">Running Documentation Site</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -120,27 +121,42 @@
 
       <main class="content">
 
-        <h1 id="migration-guide" class="title">Migration guide</h1>
-        <p>Here&#39;s a map from pre-1.x cats typeclasses to cats-mtl typeclasses:
-         - <code>MonadReader --&gt; Local</code>
-         - <code>MonadWriter --&gt; Listen</code>
-         - <code>Stateful --&gt; Stateful</code></p>
-        <p>cats typeclass parameters and context bounds have to be rewritten, to include base classes.
-        For example:
-         - <code>[F[_]: MonadReader[?[_], E]]</code> will have to be adjusted to <code>[F[_]: Monad: Local[?[_], E]]</code>,
-         - <code>[F[_]: MonadWriter[?[_], L]]</code> will have to be adjusted to <code>[F[_]: Monad: Listen[?[_], L]]</code>,
-         - <code>[F[_]: Stateful[?[_], S]]</code> will have to be adjusted to <code>[F[_]: Monad: Stateful[?[_], S]]</code></p>
-        <p>The root cause for this is addressed in the motivation section.</p>
+        <h1 id="contributing" class="title">Contributing</h1>
         
-        <h3 id="ask-local" class="section">Ask / Local<a class="anchor-link right" href="#ask-local"><i class="icofont-laika">&#xef71;</i></a></h3>
-        <p><code>MonadReader</code> from cats has been split into <code>Ask</code> and <code>Local</code>;
-        the <code>Monad</code> constraint has been weakened to <code>Applicative</code>, and the <code>local</code> method was split out
-        into a subclass to widen the implementation space for <code>Ask</code>.</p>
+        <h3 id="adding-a-new-transformer-typeclass" class="section">Adding a new transformer typeclass<a class="anchor-link right" href="#adding-a-new-transformer-typeclass"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>First thing is the set of operations, or the <em>signature</em>.
+        For example <code>Tell[F, E]</code> has the signature <code>def tell(e: E): F[Unit]</code>.</p>
+        <p>Once you&#39;ve got this down, you need to come up with a set of laws and a base typeclass.
+        These have to be worked out at the same time, because choosing base classes with more operations gives
+        you richer potential for laws but restricts implementations severely.</p>
+        <p>Come up with a rough sketch of the laws in Scala as methods but assuming no type parameters need to be
+        provided and all of the operations needed are in scope; use <code>&lt;-&gt;</code> for the equality assertion.</p>
+        <p>To be continued.</p>
         
-        <h3 id="tell-listen" class="section">Tell / Listen<a class="anchor-link right" href="#tell-listen"><i class="icofont-laika">&#xef71;</i></a></h3>
-        <p>Similarly to <code>MonadReader</code>, <code>MonadWriter</code> was split into <code>Tell</code> and <code>Listen</code>
-        and the constraint weakened to <code>Functor</code>, and <code>Listen</code> being <code>Tell</code> with the <code>listen</code>
-        method added.</p>
+        <h3 id="adding-a-new-transformer-typeclass-instance" class="section">Adding a new transformer typeclass instance<a class="anchor-link right" href="#adding-a-new-transformer-typeclass-instance"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>The characteristic which transformer typeclasses have in common is that instances of them are
+        commonly lifted through transformer stacks. I.e., if you have an <code>Ask[E =&gt; ?]</code>, you can
+        have an <code>Ask[EitherT[E =&gt; ?, String, ?]]</code>; a so-called <em>inductive</em> instance of <code>Ask</code>,
+        because the capability is not provided by <code>EitherT</code> itself but the &quot;inner monad&quot;.</p>
+        <p>Because of this, there&#39;s an argument to be made that there&#39;s only one transformer
+        typeclass instance you should need to provide: that of the &quot;innermost&quot; monad, the one
+        that is actually implementing the typeclass operations.</p>
+        
+        <h3 id="running-documentation-site" class="section">Running Documentation Site<a class="anchor-link right" href="#running-documentation-site"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>The cats-mtl website runs on <a href="https://47degrees.github.io/sbt-microsites/">SBT-Microsite</a>. 
+        To generate the website locally, run <code>sbt</code></p>
+        <pre><code>$ sbt</code></pre>
+        <p>This will take you to the <code>root</code> project. </p>
+        <p>Next, run <code>makeMicrosite</code> within sbt</p>
+        <pre><code>sbt:root&gt; makeMicrosite</code></pre>
+        <p>Once complete, this will create a <em>docs/target/site</em> directory. Ensure that you have 
+        <a href="https://jekyllrb.com/">jekyll</a> installed. In another terminal, go to the
+        <em>cats-mtl/docs/target/site</em> directory, and run in your shell (not sbt):</p>
+        <pre><code>$ jekyll serve -b /cats-mtl</code></pre>
+        <p>Browse to <code>http://127.0.0.1:4000/cats-mtl/</code> as directed by <code>jekyll</code>. The <code>-b /cats-mtl</code> is 
+        required so that context-path is correct and all resources are resolved correctly.</p>
+        <p>Keep in mind that you can keep <code>jekyll</code> running while you make continuing calls to <code>makeMicrosite</code> in sbt. 
+        <code>jekyll</code> will watch and rebuild continually as you make changes.</p>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Migration guide</title>
+    <title>Cats MTL</title>
     
       <meta name="author" content="Fabio Labella"/>
     
@@ -79,10 +79,10 @@
       </div>
 
       <ul class="nav-list">
-        <li class="level1"><a href="index.html">Cats MTL</a></li>
+        <li class="level1 active"><a href="#">Cats MTL</a></li>
         <li class="level1"><a href="getting-started.html">What is MTL?</a></li>
         <li class="level1"><a href="mtl-classes.html">MTL classes summary</a></li>
-        <li class="level1 active"><a href="#">Migration guide</a></li>
+        <li class="level1"><a href="migration.html">Migration guide</a></li>
         <li class="level1"><a href="design.html">cats-mtl Design</a></li>
         <li class="level1"><a href="contributing.html">Contributing</a></li>
         <li class="level1 nav-header">mtl-classes</li>
@@ -108,11 +108,15 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Migration guide</a></p>
+        <p class="header"><a href="#">Cats MTL</a></p>
 
         <ul class="nav-list">
-          <li class="level1"><a href="#ask-local">Ask / Local</a></li>
-          <li class="level1"><a href="#tell-listen">Tell / Listen</a></li>
+          <li class="level1"><a href="#usage">Usage</a></li>
+          <li class="level2"><a href="#supported-classes">Supported Classes</a></li>
+          <li class="level2"><a href="#laws">Laws</a></li>
+          <li class="level1"><a href="#documentation">Documentation</a></li>
+          <li class="level2"><a href="#community">Community</a></li>
+          <li class="level2"><a href="#license">License</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -120,27 +124,60 @@
 
       <main class="content">
 
-        <h1 id="migration-guide" class="title">Migration guide</h1>
-        <p>Here&#39;s a map from pre-1.x cats typeclasses to cats-mtl typeclasses:
-         - <code>MonadReader --&gt; Local</code>
-         - <code>MonadWriter --&gt; Listen</code>
-         - <code>Stateful --&gt; Stateful</code></p>
-        <p>cats typeclass parameters and context bounds have to be rewritten, to include base classes.
-        For example:
-         - <code>[F[_]: MonadReader[?[_], E]]</code> will have to be adjusted to <code>[F[_]: Monad: Local[?[_], E]]</code>,
-         - <code>[F[_]: MonadWriter[?[_], L]]</code> will have to be adjusted to <code>[F[_]: Monad: Listen[?[_], L]]</code>,
-         - <code>[F[_]: Stateful[?[_], S]]</code> will have to be adjusted to <code>[F[_]: Monad: Stateful[?[_], S]]</code></p>
-        <p>The root cause for this is addressed in the motivation section.</p>
+        <img src="https://typelevel.org/cats-mtl/img/cats-mtl-logo.png" width="200px" height="231px" align="right">
+        <h1 id="cats-mtl" class="title">Cats MTL</h1>
+        <p>Provides transformer typeclasses for cats&#39; Monads, Applicatives and Functors.</p>
+        <p>You can have multiple cats-mtl transformer typeclasses in scope at once
+        without implicit ambiguity, unlike in pre-1.0.0 cats or Scalaz 7.</p>
         
-        <h3 id="ask-local" class="section">Ask / Local<a class="anchor-link right" href="#ask-local"><i class="icofont-laika">&#xef71;</i></a></h3>
-        <p><code>MonadReader</code> from cats has been split into <code>Ask</code> and <code>Local</code>;
-        the <code>Monad</code> constraint has been weakened to <code>Applicative</code>, and the <code>local</code> method was split out
-        into a subclass to widen the implementation space for <code>Ask</code>.</p>
+        <h2 id="usage" class="section">Usage<a class="anchor-link right" href="#usage"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;org.typelevel&quot;</span><span> %% </span><span class="string-literal">&quot;cats-mtl&quot;</span><span> % </span><span class="string-literal">&quot;1.2.0&quot;</span></code></pre>
+        <p>If your project uses ScalaJS, replace the double-<code>%</code> with a triple.  Note that <strong>cats-mtl</strong> has an upstream dependency on <strong>cats-core</strong> version 2.x.</p>
+        <p>Cross-builds are available for Scala 2.12, 2.13, 3.0.0-M2, 3.0.0-M3, and ScalaJS major version 1.x.</p>
+        <p>If you&#39;re not sure where to start or what Cats MTL even is, please refer to the <a href="https://typelevel.org/cats-mtl/getting-started.html">getting started guide</a>.</p>
         
-        <h3 id="tell-listen" class="section">Tell / Listen<a class="anchor-link right" href="#tell-listen"><i class="icofont-laika">&#xef71;</i></a></h3>
-        <p>Similarly to <code>MonadReader</code>, <code>MonadWriter</code> was split into <code>Tell</code> and <code>Listen</code>
-        and the constraint weakened to <code>Functor</code>, and <code>Listen</code> being <code>Tell</code> with the <code>listen</code>
-        method added.</p>
+        <h3 id="supported-classes" class="section">Supported Classes<a class="anchor-link right" href="#supported-classes"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <ul>
+          <li><code>EitherT</code></li>
+          <li><code>Kleisli</code></li>
+          <li><code>IorT</code></li>
+          <li><code>OptionT</code></li>
+          <li><code>ReaderWriterStateT</code></li>
+          <li><code>StateT</code></li>
+          <li><code>WriterT</code></li>
+        </ul>
+        
+        <h3 id="laws" class="section">Laws<a class="anchor-link right" href="#laws"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>The <strong>cats-mtl-laws</strong> artifact provides <a href="https://github.com/typelevel/discipline">Discipline-style</a> laws for all of the type classes defined in cats-mtl. It is relatively easy to use these laws to test your own implementations of these typeclasses. Take a look <a href="https://github.com/typelevel/cats-mtl/tree/main/laws/src/main/scala/cats/mtl/laws">here</a> for more.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;org.typelevel&quot;</span><span> %% </span><span class="string-literal">&quot;cats-mtl-laws&quot;</span><span> % </span><span class="string-literal">&quot;1.2.0&quot;</span><span> % </span><span class="type-name">Test</span></code></pre>
+        <p>These laws are compatible with both Specs2 and ScalaTest.</p>
+        
+        <h2 id="documentation" class="section">Documentation<a class="anchor-link right" href="#documentation"><i class="icofont-laika">&#xef71;</i></a></h2>
+        <p>Links:</p>
+        <ol class="arabic">
+          <li>Website: <a href="https://typelevel.org/cats-mtl/">typelevel.org/cats-mtl/</a></li>
+          <li>ScalaDoc: <a href="https://typelevel.org/cats-mtl/api/">typelevel.org/cats-mtl/api/</a></li>
+        </ol>
+        <p>Related Cats links (the core):</p>
+        <ol class="arabic">
+          <li>Website: <a href="https://typelevel.org/cats/">typelevel.org/cats/</a></li>
+          <li>ScalaDoc: <a href="https://typelevel.org/cats/api/">typelevel.org/cats/api/</a></li>
+        </ol>
+        
+        <h3 id="community" class="section">Community<a class="anchor-link right" href="#community"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>People are expected to follow the
+        <a href="https://www.scala-lang.org/conduct/">Scala Code of Conduct</a> when
+        discussing cats-mtl on the Github page, Gitter channel, or other
+        venues.</p>
+        <p>We hope that our community will be respectful, helpful, and kind. If
+        you find yourself embroiled in a situation that becomes heated, or
+        that fails to live up to our expectations, you should disengage and
+        contact one of the project maintainers in private. We
+        hope to avoid letting minor aggressions and misunderstandings escalate
+        into larger problems.</p>
+        
+        <h3 id="license" class="section">License<a class="anchor-link right" href="#license"><i class="icofont-laika">&#xef71;</i></a></h3>
+        <p>All code is available to you under the MIT license, available at <a href="http://opensource.org/licenses/mit-license.php">http://opensource.org/licenses/mit-license.php</a> and also in the COPYING file. </p>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
