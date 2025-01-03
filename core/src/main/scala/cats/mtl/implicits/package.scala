@@ -16,5 +16,6 @@
 
 package cats
 package mtl
+package implicits
 
-package object implicits extends syntax.AllSyntax
+object `package` extends syntax.AllSyntax

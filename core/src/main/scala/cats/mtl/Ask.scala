@@ -17,7 +17,9 @@
 package cats
 package mtl
 
-import cats.data.{Kleisli, ReaderWriterStateT => RWST}
+import cats.data.{Kleisli, Reader, ReaderWriterStateT => RWST}
+import cats.mtl.Ask.{const, AskImpl}
+import cats.syntax.all._
 
 import scala.annotation.implicitNotFound
 
@@ -49,13 +51,18 @@ trait Ask[F[_], +E] extends Serializable {
   def ask[E2 >: E]: F[E2]
 
   def reader[A](f: E => A): F[A] = applicative.map(ask)(f)
+
+  def fromReader[A](ra: Reader[E, A]): F[A] = reader(ra.run)
+
+  def fromKleisli[A](ka: Kleisli[F, E, A])(implicit F: FlatMap[F]): F[A] =
+    ask.flatMap(ka.run(_))
 }
 
 private[mtl] trait AskForMonadPartialOrder[F[_], G[_], E] extends Ask[G, E] {
   val lift: MonadPartialOrder[F, G]
   val F: Ask[F, E]
 
-  override def applicative = lift.monadG
+  override def applicative: Applicative[G] = lift.monadG
   override def ask[E2 >: E] = lift(F.ask)
 }
 
@@ -68,6 +75,14 @@ private[mtl] trait LowPriorityAskInstances extends LowPriorityAskInstancesCompat
       val lift: MonadPartialOrder[F, G] = lift0
       val F: Ask[F, E] = F0
     }
+
+  implicit def applicativeAsk[F[_]: Applicative]: Applicative[Ask[F, *]] =
+    new Applicative[Ask[F, *]] {
+      override def pure[A](x: A): Ask[F, A] = const[F, A](x)
+
+      override def ap[A, B](ff: Ask[F, A => B])(fa: Ask[F, A]): Ask[F, B] =
+        new AskImpl(ff.applicative.ap(ff.ask)(fa.ask).widen)
+    }
 }
 
 private[mtl] trait AskInstances extends LowPriorityAskInstances {
@@ -79,6 +94,17 @@ private[mtl] trait AskInstances extends LowPriorityAskInstances {
       implicit F: Monad[F],
       L: Monoid[L]): Ask[RWST[F, E, L, S, *], E] =
     Local.baseLocalForRWST[F, E, L, S]
+
+  implicit def monadAsk[F[_]: Monad]: Monad[Ask[F, *]] = new Monad[Ask[F, *]] {
+    override def flatMap[A, B](fa: Ask[F, A])(f: A => Ask[F, B]): Ask[F, B] = new AskImpl(
+      fa.ask.flatMap(f(_).ask))
+
+    override def tailRecM[A, B](a: A)(f: A => Ask[F, Either[A, B]]): Ask[F, B] = new AskImpl(
+      Monad[F].tailRecM(a)(f(_).ask))
+
+    override def pure[A](x: A): Ask[F, A] = const[F, A](x)
+  }
+
 }
 
 object Ask extends AskInstances {
@@ -114,4 +140,8 @@ object Ask extends AskInstances {
   def reader[F[_], E, A](fun: E => A)(implicit ask: Ask[F, E]): F[A] =
     ask.reader(fun)
 
+  @inline final private[mtl] class AskImpl[F[_]: Applicative, A](fa: F[A]) extends Ask[F, A] {
+    override def applicative: Applicative[F] = implicitly
+    override def ask[E2 >: A]: F[E2] = fa.widen
+  }
 }

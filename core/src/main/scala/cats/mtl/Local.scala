@@ -74,7 +74,7 @@ private[mtl] trait LocalInstances extends LowPriorityLocalInstances {
     new Local[Kleisli[F, E, *], E] {
       def local[A](fa: Kleisli[F, E, A])(f: E => E) = fa.local(f)
       val applicative = Applicative[Kleisli[F, E, *]]
-      def ask[E2 >: E] = Kleisli.ask[F, E2]
+      def ask[E2 >: E]: Kleisli[F, E2, E2] = Kleisli.ask[F, E2]
     }
 
   implicit def localForFunction[E]: Local[E => *, E] =
@@ -160,6 +160,17 @@ private[mtl] trait LocalInstances extends LowPriorityLocalInstances {
       val lift: MonadPartialOrder[F, IorT[F, E2, *]] =
         MonadPartialOrder.monadPartialOrderForIorT[F, E2]
     }
+
+  implicit def localInvariant[F[_]]: Invariant[Local[F, *]] = new Invariant[Local[F, *]] {
+    override def imap[A, B](la: Local[F, A])(fk: A => B)(gk: B => A): Local[F, B] =
+      new Local[F, B] {
+        override def local[AA](fa: F[AA])(f: B => B): F[AA] = la.local(fa)(e => gk(f(fk(e))))
+
+        override def applicative: Applicative[F] = la.applicative
+
+        override def ask[E2 >: B]: F[E2] = applicative.map(la.ask)(fk)
+      }
+  }
 }
 
 object Local extends LocalInstances {
